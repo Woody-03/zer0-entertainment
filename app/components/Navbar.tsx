@@ -7,9 +7,10 @@ const NAV_LINKS = [
   { name: 'Music', href: '/music' },
   { name: 'Videos', href: '/videos' },
   { name: 'News', href: '/news' },
-  { name: 'Rankings', href: '/rankings' },
   { name: 'Artists', href: '/artists' },
   { name: 'Fashion', href: '/fashion' },
+  { name: 'About', href: '/about' },
+  { name: 'Contact', href: '/contact' },
 ]
 
 export default function Navbar() {
