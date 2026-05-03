@@ -6,9 +6,9 @@ const SECTIONS = [
   { icon: '🎵', label: 'Music', href: '/music', desc: 'Latest releases and singles from SL artists' },
   { icon: '🎬', label: 'Videos', href: '/videos', desc: 'Music videos and exclusive visual content' },
   { icon: '📰', label: 'News', href: '/news', desc: 'Breaking entertainment news from Sierra Leone' },
-  { icon: '🏆', label: 'Rankings', href: '/rankings', desc: 'Weekly charts and most streamed artists' },
   { icon: '🎤', label: 'Artists', href: '/artists', desc: 'Profiles and discographies of SL talent' },
-  { icon: '👗', label: 'Fashion', href: '/fashion', desc: 'Style and cultural fashion from Freetown' },
+  { icon: 'ℹ️', label: 'About', href: '/about', desc: 'Our story, mission and the team behind Zero Entertainment' },
+  { icon: '📩', label: 'Contact', href: '/contact', desc: 'Get in touch with the Zero Entertainment team' },
 ]
 
 const POSTS = [
