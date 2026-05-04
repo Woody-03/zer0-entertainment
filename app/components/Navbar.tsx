@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { name: 'News', href: '/news' },
   { name: 'Artists', href: '/artists' },
   { name: 'Fashion', href: '/fashion' },
+  { name: 'Events', href: '/events' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
 ]
