@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { supabaseServer } from '../../lib/supabaseServer'
+
+export const dynamic = 'force-dynamic'
+
 
 interface Song {
   id: string
@@ -17,9 +21,13 @@ interface Song {
 }
 
 async function getSongs(): Promise<Song[]> {
-  const response = await fetch('/api/songs?published=true', { cache: 'no-store' })
-  const result = await response.json()
-  return Array.isArray(result.data) ? result.data : []
+  const { data } = await supabaseServer
+    .from('songs')
+    .select('*')
+    .eq('published', true)
+    .order('created_at', { ascending: false })
+  
+  return data || []
 }
 
 const GENRES = ['ALL', 'AFROBEATS', 'HIP-HOP', 'R&B', 'AFRO-FUSION']

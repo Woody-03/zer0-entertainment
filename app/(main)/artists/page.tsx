@@ -1,9 +1,17 @@
 import Link from 'next/link'
+import { supabaseServer } from '../../lib/supabaseServer'
+
+export const dynamic = 'force-dynamic'
+
 
 async function getArtists() {
-  const response = await fetch('/api/artists?published=true', { cache: 'no-store' })
-  const result = await response.json()
-  return Array.isArray(result.data) ? result.data : []
+  const { data } = await supabaseServer
+    .from('artists')
+    .select('*')
+    .eq('published', true)
+    .order('created_at', { ascending: false })
+  
+  return data || []
 }
 
 const GENRES = ['ALL', 'AFROBEATS', 'HIP-HOP', 'R&B', 'AFRO-FUSION']

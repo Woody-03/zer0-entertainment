@@ -4,6 +4,8 @@ import Featured from '../components/Featured'
 import Explore from '../components/Explore'
 import Footer from '../components/Footer'
 
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
   return (
     <main>

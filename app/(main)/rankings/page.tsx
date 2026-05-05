@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { supabaseServer } from '../../lib/supabaseServer'
+
+export const dynamic = 'force-dynamic'
+
 
 interface Ranking {
   id: string
@@ -14,9 +18,13 @@ interface Ranking {
 }
 
 async function getRankings(): Promise<Ranking[]> {
-  const response = await fetch('/api/rankings?published=true', { cache: 'no-store' })
-  const result = await response.json()
-  return Array.isArray(result.data) ? result.data : []
+  const { data } = await supabaseServer
+    .from('rankings')
+    .select('*')
+    .eq('published', true)
+    .order('rank', { ascending: true })
+  
+  return data || []
 }
 
 const CATEGORIES = [
