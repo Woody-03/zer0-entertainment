@@ -1,5 +1,7 @@
 import { supabaseServer } from '../../lib/supabaseServer'
 import { requireStaffUser } from '../../lib/authServer'
+export const dynamic = 'force-dynamic'
+
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
