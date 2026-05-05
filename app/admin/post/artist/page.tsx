@@ -1,221 +1,374 @@
+'use client'
+
+import { useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import Link from 'next/link'
 
-async function getArtists() {
-  const { data, error } = await supabase
-    .from('artists')
-    .select('*')
-    .order('created_at', { ascending: false })
+export default function PostArtist() {
+  const [form, setForm] = useState({
+    name: '',
+    genre: 'AFROBEATS',
+    location: 'Sierra Leone',
+    bio: '',
+    followers: '0',
+    songs: '0',
+    verified: false,
+    published: false,
+    photo_url: '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
 
-  if (error) {
-    console.error('Error fetching artists:', error)
-    return []
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const target = e.target
+    const value = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
+    setForm(prev => ({ ...prev, [target.name]: value }))
   }
 
-  return data
-}
+  const handleSubmit = async () => {
+    if (!form.name) {
+      setError('Please fill in the artist name')
+      return
+    }
 
-const GENRES = ['ALL', 'AFROBEATS', 'HIP-HOP', 'R&B', 'AFRO-FUSION']
+    setLoading(true)
+    setError('')
 
-export default async function ArtistsPage() {
-  const artists = await getArtists()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData?.session?.access_token
+
+    if (!accessToken) {
+      setError('You must be signed in to save artists.')
+      setLoading(false)
+      return
+    }
+
+    const response = await fetch('/api/artists', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(form),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setError(result?.error || 'Error saving artist')
+    } else {
+      setSuccess(true)
+      setForm({
+        name: '',
+        genre: 'AFROBEATS',
+        location: 'Sierra Leone',
+        bio: '',
+        followers: '0',
+        songs: '0',
+        verified: false,
+        published: false,
+        photo_url: '',
+      })
+    }
+
+    setLoading(false)
+  }
 
   return (
-    <div style={{ background: '#050d1a', minHeight: '100vh' }}>
+    <div style={{ background: '#050d1a', minHeight: '100vh', padding: '40px' }}>
       <style>{`
-        .artist-card {
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-        .artist-card:hover {
-          transform: translateY(-6px);
-          border-color: rgba(26,111,255,0.4) !important;
-          box-shadow: 0 20px 60px rgba(26,111,255,0.15);
-        }
-        .genre-btn {
+        .input-field {
           transition: all 0.2s ease;
-          cursor: pointer;
         }
-        .genre-btn:hover {
-          background: rgba(26,111,255,0.2) !important;
-          color: #fff !important;
+        .input-field:focus {
+          outline: none;
+          border-color: #1a6fff !important;
+          box-shadow: 0 0 0 3px rgba(26,111,255,0.15);
         }
       `}</style>
 
-      {/* Page Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #070f1e, #0a2a5e)',
-        padding: '60px 40px',
-        borderBottom: '1px solid rgba(26,111,255,0.2)',
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ fontSize: 11, color: '#1a6fff', letterSpacing: 3, marginBottom: 12 }}>
-            DISCOVER TALENT
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 }}>
+          <div>
+            <Link href="/admin" style={{ fontSize: 12, color: '#3a6a9a', textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+              ← Back to Dashboard
+            </Link>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>
+              Add New Artist
+            </h1>
           </div>
-          <h1 style={{ fontSize: 52, fontWeight: 800, color: '#fff', marginBottom: 12 }}>
-            Sierra Leone Artists
-          </h1>
-          <p style={{ fontSize: 16, color: '#6a8aaa', maxWidth: 500 }}>
-            Discover and support the incredible talent coming out of Sierra Leone
-          </p>
+          <div style={{ fontSize: 24 }}>🎤</div>
         </div>
-      </div>
 
-      {/* Genre Filter */}
-      <div style={{
-        padding: '24px 40px',
-        borderBottom: '1px solid rgba(26,111,255,0.1)',
-        background: '#070f1e',
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {GENRES.map(genre => (
-            <button key={genre} className="genre-btn" style={{
-              padding: '8px 20px',
-              background: genre === 'ALL' ? '#1a6fff' : 'rgba(26,111,255,0.1)',
-              border: '1px solid rgba(26,111,255,0.2)',
-              borderRadius: 100,
-              color: genre === 'ALL' ? '#fff' : '#6a8aaa',
-              fontSize: 11, fontWeight: 700,
-              letterSpacing: 1, cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}>
-              {genre}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Artists Grid */}
-      <div style={{ padding: '60px 40px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-
-          {/* Stats bar */}
+        {/* Success message */}
+        {success && (
           <div style={{
-            display: 'flex', gap: 32, marginBottom: 40,
-            padding: '20px 28px',
-            background: 'rgba(26,111,255,0.05)',
-            border: '1px solid rgba(26,111,255,0.1)',
-            borderRadius: 14, flexWrap: 'wrap',
+            background: 'rgba(26,255,111,0.1)',
+            border: '1px solid rgba(26,255,111,0.3)',
+            borderRadius: 12,
+            padding: '16px 20px',
+            marginBottom: 24,
+            fontSize: 14,
+            color: '#26ff6f',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}>
-            {[
-              [artists.length.toString(), 'Total Artists'],
-              [artists.filter(a => a.verified).length.toString(), 'Verified'],
-              [artists.filter(a => {
-                const date = new Date(a.created_at)
-                const now = new Date()
-                const diffDays = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-                return diffDays <= 30
-              }).length.toString(), 'New This Month'],
-              ['6', 'Genres'],
-            ].map(([num, label]) => (
-              <div key={label}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#1a6fff' }}>{num}</div>
-                <div style={{ fontSize: 11, color: '#3a6a9a', letterSpacing: 1 }}>{label.toUpperCase()}</div>
-              </div>
-            ))}
+            <span>Artist saved successfully!</span>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Link href="/artists" style={{ fontSize: 12, color: '#26ff6f', textDecoration: 'none', fontWeight: 600 }}>
+                View on Site →
+              </Link>
+              <button onClick={() => setSuccess(false)} style={{ background: 'none', border: 'none', color: '#26ff6f', cursor: 'pointer', fontSize: 16 }}>
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div style={{
+            background: 'rgba(255,60,60,0.1)',
+            border: '1px solid rgba(255,60,60,0.3)',
+            borderRadius: 12,
+            padding: '16px 20px',
+            marginBottom: 24,
+            fontSize: 14,
+            color: '#ff8080',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(26,111,255,0.05), rgba(5,13,26,0.9))',
+          border: '1px solid rgba(26,111,255,0.15)',
+          borderRadius: 20,
+          padding: '32px',
+        }}>
+
+          {/* Name */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Artist Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+              }}
+              placeholder="Enter artist name"
+            />
           </div>
 
-          {artists.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 40px', color: '#3a6a9a' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🎤</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: '#4a6a8a', marginBottom: 8 }}>
-                No artists yet
-              </h2>
-              <p style={{ fontSize: 14 }}>
-                Artists added from the admin dashboard will appear here
-              </p>
-              <Link href="/admin/post/artist" style={{
-                display: 'inline-block', marginTop: 20,
-                padding: '12px 24px', background: '#1a6fff',
-                borderRadius: 10, color: '#fff',
-                fontSize: 13, fontWeight: 700, textDecoration: 'none',
-              }}>
-                Add First Artist
-              </Link>
+          {/* Genre */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Genre
+            </label>
+            <select
+              name="genre"
+              value={form.genre}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+              }}
+            >
+              <option value="AFROBEATS">AFROBEATS</option>
+              <option value="HIP-HOP">HIP-HOP</option>
+              <option value="R&B">R&B</option>
+              <option value="AFRO-FUSION">AFRO-FUSION</option>
+              <option value="REGGAE">REGGAE</option>
+              <option value="POP">POP</option>
+            </select>
+          </div>
+
+          {/* Location */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Location
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+              }}
+              placeholder="Enter location"
+            />
+          </div>
+
+          {/* Bio */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Bio
+            </label>
+            <textarea
+              name="bio"
+              value={form.bio}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+                minHeight: 80,
+                resize: 'vertical',
+              }}
+              placeholder="Enter artist bio"
+            />
+          </div>
+
+          {/* Followers & Songs */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+                Followers
+              </label>
+              <input
+                type="number"
+                name="followers"
+                value={form.followers}
+                onChange={handleChange}
+                className="input-field"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid rgba(26,111,255,0.2)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+                placeholder="0"
+              />
             </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 24,
-            }}>
-              {artists.map(artist => (
-                <div key={artist.id} className="artist-card" style={{
-                  background: 'linear-gradient(135deg, rgba(26,111,255,0.05), rgba(5,13,26,0.95))',
-                  border: '1px solid rgba(26,111,255,0.12)',
-                  borderRadius: 20, padding: 28,
-                  position: 'relative',
-                }}>
-                  {/* Badges */}
-                  <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 6 }}>
-                    {artist.verified && (
-                      <span style={{
-                        background: 'rgba(26,111,255,0.2)', color: '#1a6fff',
-                        fontSize: 9, fontWeight: 700,
-                        padding: '3px 8px', borderRadius: 4, letterSpacing: 1,
-                      }}>✓ VERIFIED</span>
-                    )}
-                  </div>
-
-                  {/* Avatar */}
-                  <div style={{
-                    width: 72, height: 72, borderRadius: 18,
-                    background: 'linear-gradient(135deg, #1a6fff22, #0a3d9e44)',
-                    border: '2px solid rgba(26,111,255,0.3)',
-                    display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 32,
-                    marginBottom: 16,
-                  }}>
-                    🎤
-                  </div>
-
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-                    {artist.name}
-                  </h3>
-                  <div style={{ fontSize: 12, color: '#1a6fff', marginBottom: 4, fontWeight: 500 }}>
-                    {artist.genre}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#3a5a7a', marginBottom: 14 }}>
-                    {artist.location}
-                  </div>
-                  <p style={{ fontSize: 12, color: '#5a7a9a', lineHeight: 1.6, marginBottom: 20 }}>
-                    {artist.bio}
-                  </p>
-
-                  {/* Stats */}
-                  <div style={{
-                    display: 'flex', gap: 20,
-                    padding: '14px 0',
-                    borderTop: '1px solid rgba(26,111,255,0.08)',
-                    borderBottom: '1px solid rgba(26,111,255,0.08)',
-                    marginBottom: 20,
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f0ff' }}>
-                        {artist.followers}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#3a6a9a' }}>FOLLOWERS</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f0ff' }}>
-                        {artist.songs}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#3a6a9a' }}>SONGS</div>
-                    </div>
-                  </div>
-
-                  <Link href={`/artists/${artist.id}`} style={{
-                    display: 'block', padding: '11px 20px',
-                    background: '#1a6fff', borderRadius: 10,
-                    color: '#fff', fontSize: 13, fontWeight: 700,
-                    textDecoration: 'none', textAlign: 'center',
-                  }}>
-                    View Profile
-                  </Link>
-                </div>
-              ))}
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+                Songs
+              </label>
+              <input
+                type="number"
+                name="songs"
+                value={form.songs}
+                onChange={handleChange}
+                className="input-field"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid rgba(26,111,255,0.2)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+                placeholder="0"
+              />
             </div>
-          )}
+          </div>
+
+          {/* Photo URL */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Photo URL
+            </label>
+            <input
+              type="url"
+              name="photo_url"
+              value={form.photo_url}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+              }}
+              placeholder="https://example.com/photo.jpg"
+            />
+          </div>
+
+          {/* Checkboxes */}
+          <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                name="verified"
+                checked={form.verified}
+                onChange={handleChange}
+                style={{ accentColor: '#1a6fff' }}
+              />
+              <span style={{ fontSize: 14, color: '#e8f0ff' }}>Verified Artist</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                name="published"
+                checked={form.published}
+                onChange={handleChange}
+                style={{ accentColor: '#1a6fff' }}
+              />
+              <span style={{ fontSize: 14, color: '#e8f0ff' }}>Published</span>
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              background: loading ? 'rgba(26,111,255,0.5)' : '#1a6fff',
+              border: 'none',
+              borderRadius: 12,
+              color: '#fff',
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {loading ? 'Saving...' : 'Save Artist'}
+          </button>
         </div>
       </div>
     </div>

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '../../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
-export default function PostNews() {
-  const [form, setForm] = useState({
+export default function PostForm({ initialData, isEdit }: { initialData?: any, isEdit?: boolean }) {
+  const router = useRouter()
+  const [form, setForm] = useState(initialData || {
     title: '',
     excerpt: '',
     content: '',
@@ -23,33 +25,68 @@ export default function PostNews() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = e.target
     const value = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
-    setForm(prev => ({ ...prev, [target.name]: value }))
+    setForm((prev: any) => ({ ...prev, [target.name]: value }))
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (publishNow: boolean) => {
     if (!form.title || !form.excerpt || !form.content) {
       setError('Please fill in title, excerpt and content')
       return
     }
+
     setLoading(true)
     setError('')
-    const { error } = await supabase.from('articles').insert([form])
-    if (error) {
-      setError('Error saving article: ' + error.message)
-    } else {
-      setSuccess(true)
-      setForm({
-        title: '',
-        excerpt: '',
-        content: '',
-        category: 'NEWS',
-        author: 'Zero Entertainment',
-        read_time: '3 min read',
-        hot: false,
-        featured: false,
-        published: false,
-      })
+    
+    // Update local state right before save
+    const updatedForm = { ...form, published: publishNow }
+    setForm(updatedForm)
+
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData?.session?.access_token
+
+    if (!accessToken) {
+      setError('You must be signed in to save articles.')
+      setLoading(false)
+      return
     }
+
+    const endpoint = isEdit ? `/api/articles?id=${initialData.id}` : '/api/articles'
+    const method = isEdit ? 'PUT' : 'POST'
+
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(updatedForm),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result?.error || 'Error saving article')
+      } else {
+        setSuccess(true)
+        if (!isEdit) {
+          setForm({
+            title: '',
+            excerpt: '',
+            content: '',
+            category: 'NEWS',
+            author: 'Zero Entertainment',
+            read_time: '3 min read',
+            hot: false,
+            featured: false,
+            published: false,
+          })
+        }
+      }
+    } catch (e: any) {
+      setError(e.message || 'Network error')
+    }
+
     setLoading(false)
   }
 
@@ -71,11 +108,11 @@ export default function PostNews() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 }}>
           <div>
-            <Link href="/admin" style={{ fontSize: 12, color: '#3a6a9a', textDecoration: 'none', display: 'block', marginBottom: 8 }}>
-              ← Back to Dashboard
+            <Link href="/admin/posts" style={{ fontSize: 12, color: '#3a6a9a', textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+              ← Back to Posts
             </Link>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>
-              Post New Article
+              {isEdit ? 'Edit Article' : 'Post New Article'}
             </h1>
           </div>
           <div style={{ fontSize: 24 }}>📰</div>
@@ -97,11 +134,8 @@ export default function PostNews() {
           }}>
             <span>Article saved successfully!</span>
             <div style={{ display: 'flex', gap: 12 }}>
-              <Link href="/news" style={{ fontSize: 12, color: '#26ff6f', textDecoration: 'none', fontWeight: 600 }}>
-                View on Site →
-              </Link>
-              <button onClick={() => setSuccess(false)} style={{ background: 'none', border: 'none', color: '#26ff6f', cursor: 'pointer', fontSize: 16 }}>
-                ×
+              <button onClick={() => { setSuccess(false); router.push('/admin/posts'); router.refresh() }} style={{ background: 'none', border: 'none', color: '#26ff6f', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                Go back to list
               </button>
             </div>
           </div>
@@ -312,7 +346,7 @@ export default function PostNews() {
           {/* Submit Buttons */}
           <div style={{ display: 'flex', gap: 12 }}>
             <button
-              onClick={() => { setForm(p => ({ ...p, published: true })); handleSubmit() }}
+              onClick={() => handleSubmit(true)}
               disabled={loading}
               style={{
                 flex: 1,
@@ -330,7 +364,7 @@ export default function PostNews() {
               {loading ? 'Saving...' : '🚀 Publish Now'}
             </button>
             <button
-              onClick={() => { setForm(p => ({ ...p, published: false })); handleSubmit() }}
+              onClick={() => handleSubmit(false)}
               disabled={loading}
               style={{
                 padding: '14px 24px',

@@ -1,25 +1,34 @@
-import { supabase } from '../lib/supabase'
 import Link from 'next/link'
+import { supabaseServer } from '../../lib/supabaseServer'
 
-async function getArticles() {
-  const { data, error } = await supabase
-    .from('articles')
-    .select('*')
-    .eq('published', true)
-    .order('created_at', { ascending: false })
+export const dynamic = 'force-dynamic'
 
-  if (error) {
-    console.error('Error fetching articles:', error)
-    return []
-  }
-
-  return data
+interface Article {
+  id: string
+  title: string
+  excerpt: string
+  content: string
+  category: string
+  author: string
+  read_time: string
+  hot: boolean
+  featured: boolean
+  published: boolean
+  cover_url?: string
+  created_at: string
+  updated_at: string
 }
 
 const CATEGORIES = ['ALL', 'NEWS', 'FASHION', 'MUSIC', 'ARTISTS', 'ENTERTAINMENT', 'VIDEOS']
 
 export default async function NewsPage() {
-  const articles = await getArticles()
+  const { data: articlesData } = await supabaseServer
+    .from('articles')
+    .select('*')
+    .eq('published', true)
+    .order('created_at', { ascending: false })
+
+  const articles: Article[] = articlesData || []
 
   return (
     <div style={{ background: '#050d1a', minHeight: '100vh' }}>
@@ -150,7 +159,7 @@ export default async function NewsPage() {
                       {articles[0].excerpt}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-                      <span style={{ fontSize: 12, color: '#3a6a9a' }}>
+                      <span style={{ fontSize: 12, color: '#3a6a9a' }} suppressHydrationWarning>
                         {new Date(articles[0].created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                       </span>
                       <span style={{ fontSize: 12, color: '#3a6a9a' }}>{articles[0].read_time}</span>
@@ -225,7 +234,7 @@ export default async function NewsPage() {
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid rgba(26,111,255,0.08)' }}>
                       <div style={{ display: 'flex', gap: 12 }}>
-                        <span style={{ fontSize: 11, color: '#3a6a9a' }}>
+                        <span style={{ fontSize: 11, color: '#3a6a9a' }} suppressHydrationWarning>
                           {new Date(article.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </span>
                         <span style={{ fontSize: 11, color: '#3a6a9a' }}>{article.read_time}</span>

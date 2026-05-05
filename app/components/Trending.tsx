@@ -1,39 +1,33 @@
-'use client'
+import { supabaseServer } from '../lib/supabaseServer'
+import Link from 'next/link'
 
-const TRENDING = [
-  {
-    id: 1, category: 'MUSIC',
-    title: 'Drizilik Drops Surprise Album Salone Vibes',
-    time: '2h ago', hot: true,
-  },
-  {
-    id: 2, category: 'NEWS',
-    title: 'Sierra Leone Music Awards 2025 Date Announced',
-    time: '4h ago', hot: true,
-  },
-  {
-    id: 3, category: 'FASHION',
-    title: 'Freetown Fashion Week Returns This December',
-    time: '6h ago', hot: false,
-  },
-  {
-    id: 4, category: 'RANKINGS',
-    title: 'Top 10 Most Streamed SL Artists This Month',
-    time: '8h ago', hot: false,
-  },
-  {
-    id: 5, category: 'ARTISTS',
-    title: 'Emmerson Bockarie Announces World Tour Dates',
-    time: '10h ago', hot: true,
-  },
-  {
-    id: 6, category: 'VIDEOS',
-    title: 'Fantacee Wiz Drops Stunning New Music Video',
-    time: '12h ago', hot: false,
-  },
-]
+function formatTimeAgo(dateStr: string) {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) return `${diffInSeconds}s ago`
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) return `${diffInHours}h ago`
+  const diffInDays = Math.floor(diffInHours / 24)
+  return `${diffInDays}d ago`
+}
 
-export default function Trending() {
+export default async function Trending() {
+  const { data: articles } = await supabaseServer
+    .from('articles')
+    .select('*')
+    .eq('published', true)
+    .order('created_at', { ascending: false })
+    .limit(8)
+
+  const trendingPosts = articles || []
+
+  // Create a duplicate array for the seamless CSS ticker
+  const tickerItems = [...trendingPosts, ...trendingPosts]
+
   return (
     <>
       <style>{`
@@ -52,6 +46,8 @@ export default function Trending() {
         .trend-card {
           transition: all 0.3s ease;
           cursor: pointer;
+          text-decoration: none;
+          display: block;
         }
         .trend-card:hover {
           transform: translateY(-6px);
@@ -68,7 +64,7 @@ export default function Trending() {
       }}>
         <div style={{ overflow: 'hidden' }}>
           <div className="ticker-content">
-            {[...TRENDING, ...TRENDING].map((item, i) => (
+            {tickerItems.length > 0 ? tickerItems.map((item, i) => (
               <span key={i} style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -89,7 +85,11 @@ export default function Trending() {
                 {item.title}
                 <span style={{ opacity: 0.5 }}>•</span>
               </span>
-            ))}
+            )) : (
+               <span style={{ color: '#fff', fontSize: 12, fontWeight: 600, padding: '0 20px' }}>
+                 No recent updates.
+               </span>
+            )}
           </div>
         </div>
       </div>
@@ -117,15 +117,15 @@ export default function Trending() {
                 fontSize: 36, fontWeight: 800, color: '#fff',
               }}>Trending in Salone</h2>
             </div>
-            <button style={{
+            <Link href="/news" style={{
               background: 'transparent',
               border: '1px solid rgba(26,111,255,0.3)',
-              borderRadius: 8, color: '#1a6fff',
+              borderRadius: 8, color: '#1a6fff', textDecoration: 'none',
               padding: '10px 20px', fontSize: 13,
               fontWeight: 600, cursor: 'pointer',
             }}>
               View All →
-            </button>
+            </Link>
           </div>
 
           {/* Cards Grid */}
@@ -134,8 +134,8 @@ export default function Trending() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: 20,
           }}>
-            {TRENDING.map(item => (
-              <div key={item.id} className="trend-card" style={{
+            {trendingPosts.map(item => (
+              <Link href={`/news/${item.id}`} key={item.id} className="trend-card" style={{
                 background: 'linear-gradient(135deg, rgba(26,111,255,0.06), rgba(10,61,158,0.04))',
                 border: '1px solid rgba(26,111,255,0.15)',
                 borderRadius: 16,
@@ -175,9 +175,15 @@ export default function Trending() {
                 }}>{item.title}</h3>
                 <div style={{
                   fontSize: 11, color: '#3a6a9a',
-                }}>{item.time}</div>
-              </div>
+                }} suppressHydrationWarning>{formatTimeAgo(item.created_at)}</div>
+              </Link>
             ))}
+            
+            {trendingPosts.length === 0 && (
+               <div style={{ color: '#3a6a9a', gridColumn: '1 / -1' }}>
+                 No trending posts available at the moment.
+               </div>
+            )}
           </div>
 
         </div>

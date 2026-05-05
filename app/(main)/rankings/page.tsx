@@ -1,17 +1,23 @@
 import Link from 'next/link'
 
-const RANKINGS = [
-  { rank: 1, name: 'Alabama Charm', genre: 'Hip-Hop / R&B', streams: '124,500', change: 'up', weeks: 3 },
-  { rank: 2, name: 'Woody Astarte', genre: 'Afrobeats / Afro-fusion', streams: '98,200', change: 'up', weeks: 1 },
-  { rank: 3, name: 'Drizilik', genre: 'Afrobeats', streams: '87,400', change: 'down', weeks: 5 },
-  { rank: 4, name: 'Emmerson Bockarie', genre: 'Afrobeats', streams: '76,100', change: 'same', weeks: 2 },
-  { rank: 5, name: 'Fantacee Wiz', genre: 'Hip-Hop', streams: '65,800', change: 'up', weeks: 1 },
-  { rank: 6, name: 'Kao Denero', genre: 'Hip-Hop', streams: '54,300', change: 'down', weeks: 4 },
-  { rank: 7, name: 'Boss La', genre: 'Hip-Hop', streams: '48,900', change: 'up', weeks: 2 },
-  { rank: 8, name: 'Enos Fresh', genre: 'Afrobeats', streams: '42,100', change: 'same', weeks: 1 },
-  { rank: 9, name: 'Innocent', genre: 'R&B', streams: '38,700', change: 'up', weeks: 1 },
-  { rank: 10, name: 'Shadow Boxxer', genre: 'Hip-Hop', streams: '32,400', change: 'down', weeks: 3 },
-]
+interface Ranking {
+  id: string
+  artist_name: string
+  rank: number
+  genre: string
+  streams: number
+  weeks: number
+  change: string
+  published: boolean
+  created_at: string
+  updated_at: string
+}
+
+async function getRankings(): Promise<Ranking[]> {
+  const response = await fetch('/api/rankings?published=true', { cache: 'no-store' })
+  const result = await response.json()
+  return Array.isArray(result.data) ? result.data : []
+}
 
 const CATEGORIES = [
   { icon: '🎵', label: 'Most Streamed', active: true },
@@ -20,7 +26,9 @@ const CATEGORIES = [
   { icon: '👑', label: 'All Time', active: false },
 ]
 
-export default function RankingsPage() {
+export default async function RankingsPage() {
+  const rankings = await getRankings()
+
   return (
     <div style={{ background: '#050d1a', minHeight: '100vh' }}>
       <style>{`
@@ -105,7 +113,7 @@ export default function RankingsPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {RANKINGS.map(artist => (
+                {rankings.map(artist => (
                   <div key={artist.rank} className="rank-row" style={{
                     background: artist.rank <= 3
                       ? 'linear-gradient(135deg, rgba(26,111,255,0.1), rgba(10,61,158,0.05))'
@@ -155,7 +163,7 @@ export default function RankingsPage() {
                     {/* Artist info */}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f0ff', marginBottom: 2 }}>
-                        {artist.name}
+                        {artist.artist_name}
                       </div>
                       <div style={{ fontSize: 11, color: '#3a6a9a' }}>
                         {artist.genre}
@@ -217,7 +225,7 @@ export default function RankingsPage() {
                 <div style={{ fontSize: 11, color: '#1a6fff', letterSpacing: 2, marginBottom: 20, fontWeight: 700 }}>
                   TOP 3 SPOTLIGHT
                 </div>
-                {RANKINGS.slice(0, 3).map(artist => (
+                {rankings.slice(0, 3).map(artist => (
                   <div key={artist.rank} style={{
                     display: 'flex', alignItems: 'center',
                     gap: 12, marginBottom: 16,
@@ -239,7 +247,7 @@ export default function RankingsPage() {
                     </div>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f0ff' }}>
-                        {artist.name}
+                        {artist.artist_name}
                       </div>
                       <div style={{ fontSize: 11, color: '#3a6a9a' }}>
                         {artist.streams} streams

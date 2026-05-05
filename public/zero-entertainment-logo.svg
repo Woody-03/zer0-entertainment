@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">Zero Entertainment logo</title>
+  <defs>
+    <linearGradient id="darkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07122e" />
+      <stop offset="100%" stop-color="#113b8e" />
+    </linearGradient>
+    <linearGradient id="darkRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c78ff" />
+      <stop offset="100%" stop-color="#0c60e1" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#darkGrad)" />
+  <circle cx="256" cy="256" r="212" fill="#08122c" />
+  <circle cx="256" cy="256" r="232" fill="none" stroke="url(#darkRing)" stroke-width="20" />
+  <text x="256" y="170" font-family="Montserrat, sans-serif" font-size="32" text-anchor="middle" fill="#8fa6ff" letter-spacing="4">2024</text>
+  <text x="256" y="294" font-family="Montserrat, sans-serif" font-size="92" font-weight="800" text-anchor="middle" fill="#ffffff">ZERO</text>
+  <text x="256" y="360" font-family="Montserrat, sans-serif" font-size="18" text-anchor="middle" fill="#8fa6ff" letter-spacing="5">ENTERTAINMENT</text>
+</svg>

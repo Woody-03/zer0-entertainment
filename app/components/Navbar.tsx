@@ -53,19 +53,20 @@ export default function Navbar() {
           alignItems: 'center',
           gap: 12,
         }}>
-          <div style={{
-            width: 38,
-            height: 38,
-            borderRadius: 10,
-            background: 'linear-gradient(135deg, #1a6fff, #0a3d9e)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-            fontWeight: 900,
-            color: '#fff',
-            boxShadow: '0 4px 20px rgba(26,111,255,0.4)',
-          }}>Z</div>
+          <picture>
+            <source srcSet="/zero-entertainment-logo-light.svg" media="(prefers-color-scheme: light)" />
+            <source srcSet="/zero-entertainment-logo.svg" media="(prefers-color-scheme: dark)" />
+            <img
+              src="/zero-entertainment-logo.svg"
+              alt="Zero Entertainment logo"
+              width={42}
+              height={42}
+              style={{
+                display: 'block',
+                borderRadius: 12,
+              }}
+            />
+          </picture>
           <div>
             <div style={{
               fontSize: 16,
@@ -73,11 +74,13 @@ export default function Navbar() {
               letterSpacing: 1,
               color: '#fff',
               lineHeight: 1,
+              fontFamily: 'Montserrat, sans-serif',
             }}>ZERO</div>
             <div style={{
               fontSize: 9,
               color: '#1a6fff',
               letterSpacing: 3,
+              fontFamily: 'Montserrat, sans-serif',
             }}>ENTERTAINMENT</div>
           </div>
         </Link>

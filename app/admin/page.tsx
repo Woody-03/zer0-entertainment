@@ -1,437 +1,106 @@
-'use client'
-
-import { useState } from 'react'
 import Link from 'next/link'
+import { supabaseServer } from '../lib/supabaseServer'
 
-const STATS = [
-  { label: 'Total Posts', value: '124', icon: '📝', change: '+12 this week' },
-  { label: 'Total Artists', value: '48', icon: '🎤', change: '+3 this week' },
-  { label: 'Monthly Visitors', value: '10,240', icon: '👥', change: '+18% this month' },
-  { label: 'Songs Submitted', value: '89', icon: '🎵', change: '+7 this week' },
+export const dynamic = 'force-dynamic'
+
+const QUICK_ACTIONS = [
+  { label: 'Write News', href: '/admin/posts/create' },
+  { label: 'Add Music', href: '/admin/post/music' },
+  { label: 'Add Artist', href: '/admin/post/artist' },
+  { label: 'Update Rankings', href: '/admin/post/rankings' },
 ]
 
-const RECENT_POSTS = [
-  { id: 1, title: 'Sierra Leone Music Awards 2025 Date Announced', category: 'News', date: 'May 1, 2025', status: 'published' },
-  { id: 2, title: 'Freetown Fashion Week Returns', category: 'Fashion', date: 'April 28, 2025', status: 'published' },
-  { id: 3, title: 'Drizilik New Album Review', category: 'Music', date: 'April 25, 2025', status: 'draft' },
-  { id: 4, title: 'Top 10 Artists This Month', category: 'Rankings', date: 'April 22, 2025', status: 'published' },
-  { id: 5, title: 'Emmerson World Tour Dates', category: 'News', date: 'April 20, 2025', status: 'published' },
-]
+export default async function AdminDashboardPage() {
+  // Fetch real-time metrics
+  const [
+    { count: totalPosts },
+    { count: totalArtists },
+    { count: totalSongs },
+    { data: recentPosts }
+  ] = await Promise.all([
+    supabaseServer.from('articles').select('*', { count: 'exact', head: true }),
+    supabaseServer.from('artists').select('*', { count: 'exact', head: true }),
+    supabaseServer.from('songs').select('*', { count: 'exact', head: true }),
+    supabaseServer.from('articles').select('*').order('created_at', { ascending: false }).limit(3)
+  ])
 
-const SECTIONS = [
-  { icon: '📰', label: 'Post News', href: '/admin/post/news', desc: 'Write and publish news articles' },
-  { icon: '🎵', label: 'Add Music', href: '/admin/post/music', desc: 'Add new songs and albums' },
-  { icon: '🏆', label: 'Update Rankings', href: '/admin/post/rankings', desc: 'Update weekly chart positions' },
-  { icon: '🎤', label: 'Add Artist', href: '/admin/post/artist', desc: 'Create new artist profiles' },
-  { icon: '👗', label: 'Post Fashion', href: '/admin/post/fashion', desc: 'Publish fashion stories' },
-  { icon: '🎬', label: 'Add Video', href: '/admin/post/video', desc: 'Upload and manage videos' },
-]
-
-export default function AdminDashboard() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleLogin = async () => {
-    setLoading(true)
-    setError('')
-    await new Promise(r => setTimeout(r, 1000))
-    if (email === 'admin@zero.com' && password === 'zero2025') {
-      setIsLoggedIn(true)
-    } else {
-      setError('Invalid email or password. Try admin@zero.com / zero2025')
-    }
-    setLoading(false)
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <div style={{
-        background: '#050d1a',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 40,
-      }}>
-        <style>{`
-          .input-field {
-            transition: all 0.2s ease;
-          }
-          .input-field:focus {
-            outline: none;
-            border-color: #1a6fff !important;
-            box-shadow: 0 0 0 3px rgba(26,111,255,0.15);
-          }
-          .login-btn {
-            transition: all 0.2s ease;
-          }
-          .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(26,111,255,0.4) !important;
-          }
-        `}</style>
-
-        <div style={{
-          background: 'linear-gradient(135deg, #0a2a5e, #0d1f42)',
-          border: '1px solid rgba(26,111,255,0.3)',
-          borderRadius: 24,
-          padding: '48px 40px',
-          width: '100%',
-          maxWidth: 420,
-        }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 14,
-              background: 'linear-gradient(135deg, #1a6fff, #0a3d9e)',
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 24, fontWeight: 900, color: '#fff',
-              margin: '0 auto 16px',
-              boxShadow: '0 8px 32px rgba(26,111,255,0.4)',
-            }}>Z</div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-              Admin Login
-            </h1>
-            <p style={{ fontSize: 13, color: '#4a6a8a' }}>
-              Zero Entertainment Dashboard
-            </p>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{
-              background: 'rgba(255,60,60,0.1)',
-              border: '1px solid rgba(255,60,60,0.3)',
-              borderRadius: 10,
-              padding: '12px 16px',
-              marginBottom: 20,
-              fontSize: 13,
-              color: '#ff8080',
-            }}>
-              {error}
-            </div>
-          )}
-
-          {/* Email */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: '#4a6a8a', display: 'block', marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>
-              EMAIL
-            </label>
-            <input
-              type="email"
-              className="input-field"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="admin@zero.com"
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                background: 'rgba(26,111,255,0.06)',
-                border: '1px solid rgba(26,111,255,0.2)',
-                borderRadius: 10,
-                color: '#fff',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          {/* Password */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 12, color: '#4a6a8a', display: 'block', marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>
-              PASSWORD
-            </label>
-            <input
-              type="password"
-              className="input-field"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                background: 'rgba(26,111,255,0.06)',
-                border: '1px solid rgba(26,111,255,0.2)',
-                borderRadius: 10,
-                color: '#fff',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          {/* Login Button */}
-          <button
-            className="login-btn"
-            onClick={handleLogin}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: loading ? 'rgba(26,111,255,0.5)' : 'linear-gradient(135deg, #1a6fff, #0a3d9e)',
-              border: 'none',
-              borderRadius: 10,
-              color: '#fff',
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: '0 4px 20px rgba(26,111,255,0.3)',
-            }}
-          >
-            {loading ? 'Logging in...' : 'Login to Dashboard'}
-          </button>
-
-          <div style={{ textAlign: 'center', marginTop: 24 }}>
-            <Link href="/" style={{ fontSize: 13, color: '#3a6a9a', textDecoration: 'none' }}>
-              ← Back to Zero Entertainment
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const STATS = [
+    { label: 'Total Posts', value: totalPosts || 0, change: 'All time articles' },
+    { label: 'Total Artists', value: totalArtists || 0, change: 'Registered profiles' },
+    { label: 'Songs Submitted', value: totalSongs || 0, change: 'Tracks available' },
+    { label: 'Monthly Visitors', value: '10,240', change: '+18% this month (demo)' },
+  ]
 
   return (
-    <div style={{ background: '#050d1a', minHeight: '100vh' }}>
-      <style>{`
-        .admin-card {
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-        .admin-card:hover {
-          transform: translateY(-3px);
-          border-color: rgba(26,111,255,0.4) !important;
-          box-shadow: 0 12px 40px rgba(26,111,255,0.15);
-        }
-        .post-row {
-          transition: all 0.2s ease;
-        }
-        .post-row:hover {
-          background: rgba(26,111,255,0.06) !important;
-        }
-        .logout-btn:hover {
-          background: rgba(255,60,60,0.2) !important;
-          color: #ff8080 !important;
-        }
-      `}</style>
+    <div style={{ display: 'grid', gap: 28 }}>
+      <section style={{ display: 'grid', gap: 20 }}>
+        <div>
+          <p style={{ fontSize: 14, color: '#6a8aaa', marginBottom: 8 }}>Welcome back, admin.</p>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: 0 }}>Zero Entertainment content control</h1>
+          <p style={{ fontSize: 15, color: '#9db4d8', maxWidth: 720, marginTop: 12 }}>
+            Use the admin panel to publish news, update artists, manage music releases, and control the front page content feed.
+          </p>
+        </div>
 
-      {/* Admin Header */}
-      <div style={{
-        background: '#0a1628',
-        borderBottom: '1px solid rgba(26,111,255,0.15)',
-        padding: '0 40px',
-      }}>
-        <div style={{
-          maxWidth: 1280, margin: '0 auto',
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', height: 64,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'linear-gradient(135deg, #1a6fff, #0a3d9e)',
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 14, fontWeight: 900, color: '#fff',
-            }}>Z</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: 1 }}>
-                ZERO ENTERTAINMENT
-              </div>
-              <div style={{ fontSize: 9, color: '#1a6fff', letterSpacing: 2 }}>
-                ADMIN DASHBOARD
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18 }}>
+          {STATS.map(stat => (
+            <div key={stat.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: 24 }}>
+              <div style={{ fontSize: 13, color: '#7da8ff', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>{stat.label}</div>
+              <div style={{ fontSize: 34, fontWeight: 800, color: '#fff' }}>{stat.value}</div>
+              <div style={{ marginTop: 10, fontSize: 13, color: '#8fa4cc' }}>{stat.change}</div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ display: 'grid', gap: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: '#fff' }}>Quick content actions</h2>
+            <p style={{ fontSize: 13, color: '#9db4d8', margin: '6px 0 0' }}>Fast access to the posts and media workflows.</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ fontSize: 13, color: '#4a6a8a' }}>
-              Welcome, <span style={{ color: '#7ab0ff', fontWeight: 600 }}>Admin</span>
-            </div>
-            <Link href="/" style={{
-              fontSize: 12, color: '#4a6a8a',
-              textDecoration: 'none', padding: '6px 14px',
-              border: '1px solid rgba(26,111,255,0.2)',
-              borderRadius: 6,
-            }}>
-              View Site
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          {QUICK_ACTIONS.map(action => (
+            <Link key={action.label} href={action.href} style={{ display: 'block', padding: 22, borderRadius: 18, background: 'rgba(26,111,255,0.06)', border: '1px solid rgba(26,111,255,0.12)', textDecoration: 'none', color: '#fff' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{action.label}</div>
+              <div style={{ fontSize: 13, color: '#9db4d8' }}>Manage content for the front page and publish live updates.</div>
             </Link>
-            <button
-              className="logout-btn"
-              onClick={() => setIsLoggedIn(false)}
-              style={{
-                fontSize: 12, color: '#ff6060',
-                background: 'rgba(255,60,60,0.1)',
-                border: '1px solid rgba(255,60,60,0.2)',
-                borderRadius: 6, padding: '6px 14px',
-                cursor: 'pointer', fontFamily: 'inherit',
-                transition: 'all 0.2s',
-              }}
-            >
-              Logout
-            </button>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ display: 'grid', gap: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: '#fff' }}>Recent content</h2>
+            <p style={{ fontSize: 13, color: '#9db4d8', margin: '6px 0 0' }}>Published and draft items controlled by staff.</p>
           </div>
         </div>
-      </div>
 
-      <div style={{ padding: '40px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-
-          {/* Welcome */}
-          <div style={{ marginBottom: 36 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-              Dashboard
-            </h1>
-            <p style={{ fontSize: 14, color: '#4a6a8a' }}>
-              Manage all Zero Entertainment content from here
-            </p>
+        <div style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 120px 140px', background: 'rgba(255,255,255,0.03)', padding: '18px 22px', color: '#7da8ff', fontSize: 12, letterSpacing: 1 }}>            
+            <span>Title</span>
+            <span>Category</span>
+            <span>Status</span>
+            <span>Date</span>
           </div>
-
-          {/* Stats */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 20,
-            marginBottom: 40,
-          }}>
-            {STATS.map(stat => (
-              <div key={stat.label} className="admin-card" style={{
-                background: 'linear-gradient(135deg, rgba(26,111,255,0.08), rgba(5,13,26,0.9))',
-                border: '1px solid rgba(26,111,255,0.15)',
-                borderRadius: 16, padding: 24,
-              }}>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{stat.icon}</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: 13, color: '#4a6a8a', marginBottom: 8 }}>
-                  {stat.label}
-                </div>
-                <div style={{ fontSize: 11, color: '#1a6fff', fontWeight: 600 }}>
-                  {stat.change}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-
-            {/* Quick Post Actions */}
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 20 }}>
-                Post New Content
-              </h2>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 14,
-              }}>
-                {SECTIONS.map(sec => (
-                  <Link key={sec.label} href={sec.href} className="admin-card" style={{
-                    background: 'rgba(26,111,255,0.05)',
-                    border: '1px solid rgba(26,111,255,0.12)',
-                    borderRadius: 14,
-                    padding: 20,
-                    textDecoration: 'none',
-                    display: 'block',
-                  }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}>{sec.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f0ff', marginBottom: 4 }}>
-                      {sec.label}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#3a5a7a', lineHeight: 1.4 }}>
-                      {sec.desc}
-                    </div>
-                  </Link>
-                ))}
-              </div>
+          {recentPosts?.map(post => (
+            <div key={post.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 120px 140px', padding: '18px 22px', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', background: !post.published ? 'rgba(255, 214, 0, 0.07)' : 'transparent' }}>
+              <span style={{ color: '#eef3ff', fontWeight: 600 }}>{post.title}</span>
+              <span style={{ color: '#9db4d8' }}>{post.category}</span>
+              <span style={{ color: post.published ? '#7bff9e' : '#ffe06a', fontWeight: 700 }}>{post.published ? 'Published' : 'Draft'}</span>
+              <span style={{ color: '#9db4d8' }} suppressHydrationWarning>{new Date(post.created_at).toLocaleDateString('en-US')}</span>
             </div>
-
-            {/* Recent Posts */}
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 20,
-              }}>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>
-                  Recent Posts
-                </h2>
-                <button style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(26,111,255,0.2)',
-                  borderRadius: 6,
-                  color: '#1a6fff',
-                  padding: '6px 14px',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}>
-                  View All
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {RECENT_POSTS.map(post => (
-                  <div key={post.id} className="post-row" style={{
-                    background: 'rgba(26,111,255,0.03)',
-                    border: '1px solid rgba(26,111,255,0.08)',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0ff', marginBottom: 4 }}>
-                        {post.title}
-                      </div>
-                      <div style={{ display: 'flex', gap: 10 }}>
-                        <span style={{ fontSize: 10, color: '#3a6a9a' }}>{post.category}</span>
-                        <span style={{ fontSize: 10, color: '#3a6a9a' }}>{post.date}</span>
-                      </div>
-                    </div>
-                    <span style={{
-                      fontSize: 9, fontWeight: 700,
-                      padding: '4px 10px', borderRadius: 6,
-                      letterSpacing: 1,
-                      background: post.status === 'published'
-                        ? 'rgba(26,255,111,0.12)'
-                        : 'rgba(255,200,26,0.12)',
-                      color: post.status === 'published' ? '#26ff6f' : '#ffc81a',
-                    }}>
-                      {post.status.toUpperCase()}
-                    </span>
-                    <button style={{
-                      background: 'rgba(26,111,255,0.1)',
-                      border: '1px solid rgba(26,111,255,0.2)',
-                      borderRadius: 6,
-                      color: '#1a6fff',
-                      padding: '5px 12px',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}>
-                      Edit
-                    </button>
-                  </div>
-                ))}
-              </div>
+          ))}
+          {(!recentPosts || recentPosts.length === 0) && (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#6a8aaa' }}>
+              No recent content.
             </div>
-
-          </div>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   )
 }

@@ -1,111 +1,32 @@
 import Link from 'next/link'
 
-const SONGS = [
-  {
-    id: 1,
-    title: 'Bebe',
-    artist: 'Woody Astarte ft. Alabama Charm',
-    genre: 'Afrobeats',
-    duration: '3:42',
-    plays: '24,500',
-    new: true,
-    hot: true,
-  },
-  {
-    id: 2,
-    title: 'Bounce On Me',
-    artist: 'Woody Astarte',
-    genre: 'Afro-fusion',
-    duration: '3:18',
-    plays: '18,200',
-    new: true,
-    hot: false,
-  },
-  {
-    id: 3,
-    title: 'Salone Vibes',
-    artist: 'Drizilik',
-    genre: 'Afrobeats',
-    duration: '4:05',
-    plays: '87,400',
-    new: false,
-    hot: true,
-  },
-  {
-    id: 4,
-    title: 'Freetong',
-    artist: 'Emmerson Bockarie',
-    genre: 'Afrobeats',
-    duration: '3:55',
-    plays: '65,100',
-    new: false,
-    hot: false,
-  },
-  {
-    id: 5,
-    title: 'No Wahala',
-    artist: 'Alabama Charm',
-    genre: 'Hip-Hop',
-    duration: '3:28',
-    plays: '54,800',
-    new: false,
-    hot: true,
-  },
-  {
-    id: 6,
-    title: 'Street Life',
-    artist: 'Kao Denero',
-    genre: 'Hip-Hop',
-    duration: '4:12',
-    plays: '48,300',
-    new: false,
-    hot: false,
-  },
-  {
-    id: 7,
-    title: 'Loving You',
-    artist: 'Innocent',
-    genre: 'R&B',
-    duration: '3:35',
-    plays: '32,100',
-    new: true,
-    hot: false,
-  },
-  {
-    id: 8,
-    title: 'Hustler',
-    artist: 'Boss La',
-    genre: 'Hip-Hop',
-    duration: '3:50',
-    plays: '28,700',
-    new: false,
-    hot: false,
-  },
-  {
-    id: 9,
-    title: 'Cinematic',
-    artist: 'Fantacee Wiz',
-    genre: 'Hip-Hop',
-    duration: '4:22',
-    plays: '22,400',
-    new: false,
-    hot: false,
-  },
-  {
-    id: 10,
-    title: 'Real Love',
-    artist: 'Enos Fresh',
-    genre: 'Afrobeats',
-    duration: '3:15',
-    plays: '19,800',
-    new: true,
-    hot: false,
-  },
-]
+interface Song {
+  id: string
+  title: string
+  artist: string
+  genre: string
+  duration: number
+  plays: number
+  new_release: boolean
+  hot: boolean
+  published: boolean
+  audio_url?: string
+  cover_url?: string
+  created_at: string
+  updated_at: string
+}
+
+async function getSongs(): Promise<Song[]> {
+  const response = await fetch('/api/songs?published=true', { cache: 'no-store' })
+  const result = await response.json()
+  return Array.isArray(result.data) ? result.data : []
+}
 
 const GENRES = ['ALL', 'AFROBEATS', 'HIP-HOP', 'R&B', 'AFRO-FUSION']
 
-export default function MusicPage() {
+export default async function MusicPage() {
+  const songs = await getSongs()
+
   return (
     <div style={{ background: '#050d1a', minHeight: '100vh' }}>
       <style>{`
@@ -210,7 +131,7 @@ export default function MusicPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {SONGS.map((song, index) => (
+{songs.map((song, index) => (
                   <div key={song.id} className="song-row" style={{
                     background: 'rgba(26,111,255,0.03)',
                     border: '1px solid rgba(26,111,255,0.08)',
@@ -254,7 +175,7 @@ export default function MusicPage() {
                         <span style={{ fontSize: 14, fontWeight: 700, color: '#e8f0ff' }}>
                           {song.title}
                         </span>
-                        {song.new && (
+                        {song.new_release && (
                           <span style={{
                             background: 'rgba(26,255,111,0.15)',
                             color: '#26ff6f',

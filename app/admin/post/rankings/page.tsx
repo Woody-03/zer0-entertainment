@@ -1,265 +1,340 @@
+'use client'
+
+import { useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import Link from 'next/link'
 
-async function getRankings() {
-  const { data, error } = await supabase
-    .from('rankings')
-    .select('*')
-    .order('rank', { ascending: true })
+export default function PostRanking() {
+  const [form, setForm] = useState({
+    artist_name: '',
+    rank: '1',
+    genre: 'AFROBEATS',
+    streams: '0',
+    weeks: '1',
+    change: 'stable',
+    published: false,
+  })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
 
-  if (error) {
-    console.error('Error fetching rankings:', error)
-    return []
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const target = e.target
+    const value = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value
+    setForm(prev => ({ ...prev, [target.name]: value }))
   }
 
-  return data
-}
+  const handleSubmit = async () => {
+    if (!form.artist_name) {
+      setError('Please fill in the artist name')
+      return
+    }
 
-const CATEGORIES = [
-  { icon: '🎵', label: 'Most Streamed', active: true },
-  { icon: '🔥', label: 'Trending', active: false },
-  { icon: '🆕', label: 'New Entries', active: false },
-  { icon: '👑', label: 'All Time', active: false },
-]
+    setLoading(true)
+    setError('')
 
-export default async function RankingsPage() {
-  const rankings = await getRankings()
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData?.session?.access_token
+
+    if (!accessToken) {
+      setError('You must be signed in to save rankings.')
+      setLoading(false)
+      return
+    }
+
+    const response = await fetch('/api/rankings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(form),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      setError(result?.error || 'Error saving ranking')
+    } else {
+      setSuccess(true)
+      setForm({
+        artist_name: '',
+        rank: '1',
+        genre: 'AFROBEATS',
+        streams: '0',
+        weeks: '1',
+        change: 'stable',
+        published: false,
+      })
+    }
+
+    setLoading(false)
+  }
 
   return (
-    <div style={{ background: '#050d1a', minHeight: '100vh' }}>
+    <div style={{ background: '#050d1a', minHeight: '100vh', padding: '40px' }}>
       <style>{`
-        .rank-row {
+        .input-field {
           transition: all 0.2s ease;
-          cursor: pointer;
         }
-        .rank-row:hover {
-          background: rgba(26,111,255,0.08) !important;
-          border-color: rgba(26,111,255,0.3) !important;
-        }
-        .cat-tab {
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-        .cat-tab:hover {
-          border-color: rgba(26,111,255,0.4) !important;
-          color: #fff !important;
+        .input-field:focus {
+          outline: none;
+          border-color: #1a6fff !important;
+          box-shadow: 0 0 0 3px rgba(26,111,255,0.15);
         }
       `}</style>
 
-      {/* Page Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #070f1e, #0a2a5e)',
-        padding: '60px 40px',
-        borderBottom: '1px solid rgba(26,111,255,0.2)',
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ fontSize: 11, color: '#1a6fff', letterSpacing: 3, marginBottom: 12 }}>
-            WEEKLY CHARTS
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 }}>
+          <div>
+            <Link href="/admin" style={{ fontSize: 12, color: '#3a6a9a', textDecoration: 'none', display: 'block', marginBottom: 8 }}>
+              ← Back to Dashboard
+            </Link>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff' }}>
+              Add Chart Entry
+            </h1>
           </div>
-          <h1 style={{ fontSize: 52, fontWeight: 800, color: '#fff', marginBottom: 12 }}>
-            Sierra Leone Rankings
-          </h1>
-          <p style={{ fontSize: 16, color: '#6a8aaa', maxWidth: 500 }}>
-            The official Zero Entertainment charts updated every week
-          </p>
+          <div style={{ fontSize: 24 }}>🏆</div>
         </div>
-      </div>
 
-      <div style={{ padding: '60px 40px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-
-          {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 40, flexWrap: 'wrap' }}>
-            {CATEGORIES.map(cat => (
-              <button key={cat.label} className="cat-tab" style={{
-                padding: '12px 24px',
-                background: cat.active ? 'rgba(26,111,255,0.15)' : 'transparent',
-                border: `1px solid ${cat.active ? 'rgba(26,111,255,0.5)' : 'rgba(26,111,255,0.15)'}`,
-                borderRadius: 12,
-                color: cat.active ? '#fff' : '#4a6a8a',
-                fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                {cat.icon} {cat.label}
+        {/* Success message */}
+        {success && (
+          <div style={{
+            background: 'rgba(26,255,111,0.1)',
+            border: '1px solid rgba(26,255,111,0.3)',
+            borderRadius: 12,
+            padding: '16px 20px',
+            marginBottom: 24,
+            fontSize: 14,
+            color: '#26ff6f',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <span>Ranking saved successfully!</span>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Link href="/rankings" style={{ fontSize: 12, color: '#26ff6f', textDecoration: 'none', fontWeight: 600 }}>
+                View on Site →
+              </Link>
+              <button onClick={() => setSuccess(false)} style={{ background: 'none', border: 'none', color: '#26ff6f', cursor: 'pointer', fontSize: 16 }}>
+                ×
               </button>
-            ))}
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div style={{
+            background: 'rgba(255,60,60,0.1)',
+            border: '1px solid rgba(255,60,60,0.3)',
+            borderRadius: 12,
+            padding: '16px 20px',
+            marginBottom: 24,
+            fontSize: 14,
+            color: '#ff8080',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(26,111,255,0.05), rgba(5,13,26,0.9))',
+          border: '1px solid rgba(26,111,255,0.15)',
+          borderRadius: 20,
+          padding: '32px',
+        }}>
+
+          {/* Artist Name */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Artist Name *
+            </label>
+            <input
+              type="text"
+              name="artist_name"
+              value={form.artist_name}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+              }}
+              placeholder="Enter artist name"
+            />
           </div>
 
-          {rankings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 40px', color: '#3a6a9a' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: '#4a6a8a', marginBottom: 8 }}>
-                No rankings yet
-              </h2>
-              <p style={{ fontSize: 14, marginBottom: 20 }}>
-                Rankings added from the admin dashboard will appear here
-              </p>
-              <Link href="/admin/post/rankings" style={{
-                display: 'inline-block',
-                padding: '12px 24px', background: '#1a6fff',
-                borderRadius: 10, color: '#fff',
-                fontSize: 13, fontWeight: 700, textDecoration: 'none',
-              }}>
-                Add First Ranking
-              </Link>
+          {/* Rank & Genre */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+                Rank
+              </label>
+              <input
+                type="number"
+                name="rank"
+                value={form.rank}
+                onChange={handleChange}
+                className="input-field"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid rgba(26,111,255,0.2)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+                placeholder="1"
+                min="1"
+              />
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
-
-              {/* Rankings Table */}
-              <div>
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  alignItems: 'center', marginBottom: 20,
-                }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
-                    Top {rankings.length} This Week
-                  </h2>
-                  <span style={{ fontSize: 11, color: '#3a6a9a', letterSpacing: 1 }}>
-                    Updated {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {rankings.map(artist => (
-                    <div key={artist.id} className="rank-row" style={{
-                      background: artist.rank <= 3
-                        ? 'linear-gradient(135deg, rgba(26,111,255,0.1), rgba(10,61,158,0.05))'
-                        : 'rgba(26,111,255,0.03)',
-                      border: `1px solid ${artist.rank <= 3 ? 'rgba(26,111,255,0.2)' : 'rgba(26,111,255,0.08)'}`,
-                      borderRadius: 14, padding: '16px 20px',
-                      display: 'flex', alignItems: 'center', gap: 16,
-                    }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10,
-                        background: artist.rank === 1
-                          ? 'linear-gradient(135deg, #ffd700, #ffaa00)'
-                          : artist.rank === 2
-                          ? 'linear-gradient(135deg, #c0c0c0, #a0a0a0)'
-                          : artist.rank === 3
-                          ? 'linear-gradient(135deg, #cd7f32, #a05a20)'
-                          : 'rgba(26,111,255,0.1)',
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 14,
-                        fontWeight: 800,
-                        color: artist.rank <= 3 ? '#000' : '#4a6a8a',
-                        flexShrink: 0,
-                      }}>
-                        {artist.rank}
-                      </div>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: 12,
-                        background: 'linear-gradient(135deg, #1a6fff22, #0a3d9e22)',
-                        border: '1px solid rgba(26,111,255,0.2)',
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 20, flexShrink: 0,
-                      }}>
-                        🎤
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f0ff', marginBottom: 2 }}>
-                          {artist.artist_name}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#3a6a9a' }}>
-                          {artist.genre}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#7ab0ff' }}>
-                          {artist.weeks}
-                        </div>
-                        <div style={{ fontSize: 10, color: '#3a6a9a' }}>weeks</div>
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f0ff' }}>
-                          {artist.streams}
-                        </div>
-                        <div style={{ fontSize: 10, color: '#3a6a9a' }}>streams</div>
-                      </div>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: 8,
-                        background: artist.change === 'up'
-                          ? 'rgba(26,255,111,0.1)'
-                          : artist.change === 'down'
-                          ? 'rgba(255,60,60,0.1)'
-                          : 'rgba(26,111,255,0.1)',
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 12, flexShrink: 0,
-                        color: artist.change === 'up' ? '#26ff6f' : artist.change === 'down' ? '#ff6060' : '#7ab0ff',
-                      }}>
-                        {artist.change === 'up' ? '↑' : artist.change === 'down' ? '↓' : '—'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Side Panel */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #0a2a5e, #0d1f42)',
-                  border: '1px solid rgba(26,111,255,0.3)',
-                  borderRadius: 20, padding: 28,
-                }}>
-                  <div style={{ fontSize: 11, color: '#1a6fff', letterSpacing: 2, marginBottom: 20, fontWeight: 700 }}>
-                    TOP 3 SPOTLIGHT
-                  </div>
-                  {rankings.slice(0, 3).map(artist => (
-                    <div key={artist.id} style={{
-                      display: 'flex', alignItems: 'center',
-                      gap: 12, marginBottom: 16, paddingBottom: 16,
-                      borderBottom: artist.rank < 3 ? '1px solid rgba(26,111,255,0.1)' : 'none',
-                    }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: 8,
-                        background: artist.rank === 1
-                          ? 'linear-gradient(135deg, #ffd700, #ffaa00)'
-                          : artist.rank === 2
-                          ? 'linear-gradient(135deg, #c0c0c0, #a0a0a0)'
-                          : 'linear-gradient(135deg, #cd7f32, #a05a20)',
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 13, fontWeight: 800, color: '#000',
-                      }}>
-                        {artist.rank}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f0ff' }}>
-                          {artist.artist_name}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#3a6a9a' }}>
-                          {artist.streams} streams
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{
-                  background: 'rgba(26,111,255,0.06)',
-                  border: '1px solid rgba(26,111,255,0.15)',
-                  borderRadius: 20, padding: 28, textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>🏆</div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
-                    Want To Chart?
-                  </h3>
-                  <p style={{ fontSize: 12, color: '#4a6a8a', lineHeight: 1.6, marginBottom: 20 }}>
-                    Submit your music to be considered for the weekly Zero Entertainment charts
-                  </p>
-                  <Link href="/submit" style={{
-                    display: 'block', padding: '12px 20px',
-                    background: '#1a6fff', borderRadius: 10,
-                    color: '#fff', fontSize: 13, fontWeight: 700,
-                    textDecoration: 'none',
-                  }}>
-                    Submit Music
-                  </Link>
-                </div>
-              </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+                Genre
+              </label>
+              <select
+                name="genre"
+                value={form.genre}
+                onChange={handleChange}
+                className="input-field"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid rgba(26,111,255,0.2)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+              >
+                <option value="AFROBEATS">AFROBEATS</option>
+                <option value="HIP-HOP">HIP-HOP</option>
+                <option value="R&B">R&B</option>
+                <option value="AFRO-FUSION">AFRO-FUSION</option>
+                <option value="REGGAE">REGGAE</option>
+                <option value="POP">POP</option>
+              </select>
             </div>
-          )}
+          </div>
+
+          {/* Streams & Weeks */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+                Streams
+              </label>
+              <input
+                type="number"
+                name="streams"
+                value={form.streams}
+                onChange={handleChange}
+                className="input-field"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid rgba(26,111,255,0.2)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+                placeholder="0"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+                Weeks on Chart
+              </label>
+              <input
+                type="number"
+                name="weeks"
+                value={form.weeks}
+                onChange={handleChange}
+                className="input-field"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(5,13,26,0.8)',
+                  border: '1px solid rgba(26,111,255,0.2)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+                placeholder="1"
+                min="1"
+              />
+            </div>
+          </div>
+
+          {/* Change */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#e8f0ff', marginBottom: 8 }}>
+              Position Change
+            </label>
+            <select
+              name="change"
+              value={form.change}
+              onChange={handleChange}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(5,13,26,0.8)',
+                border: '1px solid rgba(26,111,255,0.2)',
+                borderRadius: 10,
+                color: '#fff',
+                fontSize: 14,
+              }}
+            >
+              <option value="up">Up ↑</option>
+              <option value="down">Down ↓</option>
+              <option value="stable">Stable —</option>
+              <option value="new">New Entry</option>
+            </select>
+          </div>
+
+          {/* Published */}
+          <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                name="published"
+                checked={form.published}
+                onChange={handleChange}
+                style={{ accentColor: '#1a6fff' }}
+              />
+              <span style={{ fontSize: 14, color: '#e8f0ff' }}>Published</span>
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              background: loading ? 'rgba(26,111,255,0.5)' : '#1a6fff',
+              border: 'none',
+              borderRadius: 12,
+              color: '#fff',
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {loading ? 'Saving...' : 'Save Ranking'}
+          </button>
         </div>
       </div>
     </div>

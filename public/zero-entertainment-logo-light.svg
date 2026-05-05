@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="logoTitleLight">
+  <title id="logoTitleLight">Zero Entertainment logo light mode</title>
+  <defs>
+    <linearGradient id="lightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e7eefc" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#lightGrad)" />
+  <circle cx="256" cy="256" r="212" fill="#f5f7ff" stroke="#c5d3ff" stroke-width="18" />
+  <text x="256" y="170" font-family="Montserrat, sans-serif" font-size="32" text-anchor="middle" fill="#4f5bb8" letter-spacing="4">2024</text>
+  <text x="256" y="294" font-family="Montserrat, sans-serif" font-size="92" font-weight="800" text-anchor="middle" fill="#111827">ZERO</text>
+  <text x="256" y="360" font-family="Montserrat, sans-serif" font-size="18" text-anchor="middle" fill="#4f5bb8" letter-spacing="5">ENTERTAINMENT</text>
+</svg>
